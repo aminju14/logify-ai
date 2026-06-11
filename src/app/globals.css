@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  @apply bg-[#f0f0eb] dark:bg-[#111111] transition-colors duration-200;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-200 dark:bg-[#333] rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-300 dark:bg-[#444];
+}
