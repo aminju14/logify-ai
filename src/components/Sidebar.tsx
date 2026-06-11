@@ -67,15 +67,22 @@ export default function Sidebar() {
         </button>
       </div>
 
+      {/* Copyright */}
+      <div className="px-5 pb-2 text-center">
+        <p className="text-[9px] text-gray-300 dark:text-[#333] tracking-wide select-none">
+          © {new Date().getFullYear()} <span className="font-semibold text-[#F4C430]/60">MinLabs</span>
+        </p>
+      </div>
+
       {/* User */}
       <div className="mx-3 mb-4 px-1 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-xs text-white font-bold shrink-0">
-            M
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center text-xs text-black font-bold shrink-0">
+            ML
           </div>
           <div className="min-w-0">
-            <p className="text-[12px] font-semibold text-gray-900 dark:text-white truncate">Maddox</p>
-            <p className="text-[10px] text-gray-400 dark:text-[#555] truncate">maddox@example.com</p>
+            <p className="text-[12px] font-semibold text-gray-900 dark:text-white truncate">MinLabs</p>
+            <p className="text-[10px] text-gray-400 dark:text-[#555] truncate">hello@minlabs.dev</p>
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">

@@ -13,14 +13,12 @@ function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
   return (
     <button
       onClick={onChange}
-      className={`relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 ${
-        on ? 'bg-[#F4C430]' : 'bg-gray-200 dark:bg-[#333]'
-      }`}
+      className={`relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 ${on ? 'bg-[#F4C430]' : 'bg-gray-200 dark:bg-[#333]'
+        }`}
     >
       <span
-        className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${
-          on ? 'translate-x-[22px]' : 'translate-x-0.5'
-        }`}
+        className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${on ? 'translate-x-[22px]' : 'translate-x-0.5'
+          }`}
       />
     </button>
   )
@@ -31,15 +29,13 @@ function Radio({ selected, label, onChange }: { selected: boolean; label: string
   return (
     <button onClick={onChange} className="flex items-center gap-2 group">
       <span
-        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-          selected ? 'border-[#F4C430]' : 'border-gray-300 dark:border-[#444]'
-        }`}
+        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${selected ? 'border-[#F4C430]' : 'border-gray-300 dark:border-[#444]'
+          }`}
       >
         {selected && <span className="w-2 h-2 rounded-full bg-[#F4C430]" />}
       </span>
-      <span className={`text-[13px] transition-colors ${
-        selected ? 'text-gray-900 dark:text-white font-medium' : 'text-gray-500 dark:text-[#777]'
-      }`}>
+      <span className={`text-[13px] transition-colors ${selected ? 'text-gray-900 dark:text-white font-medium' : 'text-gray-500 dark:text-[#777]'
+        }`}>
         {label}
       </span>
     </button>
@@ -128,8 +124,8 @@ export default function SettingsPage() {
                   </button>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[15px] font-semibold text-gray-900 dark:text-white">Maddox</p>
-                  <p className="text-[13px] text-gray-400 dark:text-[#666]">maddox@example.com</p>
+                  <p className="text-[15px] font-semibold text-gray-900 dark:text-white">Minlabs</p>
+                  <p className="text-[13px] text-gray-400 dark:text-[#666]">minlabs@example.com</p>
                   <p className="text-[11px] text-gray-300 dark:text-[#444] mt-0.5">Member since April 27, 2026</p>
                 </div>
                 <button className="px-4 py-2 rounded-xl border border-gray-200 dark:border-[#333] text-[13px] font-medium text-gray-700 dark:text-[#ccc] hover:border-gray-300 dark:hover:border-[#444] hover:bg-gray-50 dark:hover:bg-white/5 transition-all shrink-0">
@@ -149,15 +145,13 @@ export default function SettingsPage() {
                       <button
                         key={m}
                         onClick={() => handleThemeMode(m)}
-                        className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border text-[13px] font-medium transition-all ${
-                          themeMode === m
-                            ? 'border-[#F4C430]/40 bg-[#F4C430]/5 text-gray-900 dark:text-white'
-                            : 'border-gray-100 dark:border-[#252525] text-gray-500 dark:text-[#666] hover:border-gray-200 dark:hover:border-[#333]'
-                        }`}
+                        className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border text-[13px] font-medium transition-all ${themeMode === m
+                          ? 'border-[#F4C430]/40 bg-[#F4C430]/5 text-gray-900 dark:text-white'
+                          : 'border-gray-100 dark:border-[#252525] text-gray-500 dark:text-[#666] hover:border-gray-200 dark:hover:border-[#333]'
+                          }`}
                       >
-                        <span className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${
-                          themeMode === m ? 'border-[#F4C430]' : 'border-gray-300 dark:border-[#444]'
-                        }`}>
+                        <span className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${themeMode === m ? 'border-[#F4C430]' : 'border-gray-300 dark:border-[#444]'
+                          }`}>
                           {themeMode === m && <span className="w-1.5 h-1.5 rounded-full bg-[#F4C430]" />}
                         </span>
                         {m.charAt(0).toUpperCase() + m.slice(1)}
@@ -174,9 +168,8 @@ export default function SettingsPage() {
                         key={c}
                         onClick={() => setAccent(c)}
                         style={{ background: c }}
-                        className={`w-9 h-9 rounded-full transition-transform hover:scale-110 ${
-                          accent === c ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-[#1a1a1a]' : ''
-                        }`}
+                        className={`w-9 h-9 rounded-full transition-transform hover:scale-110 ${accent === c ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-[#1a1a1a]' : ''
+                          }`}
                       />
                     ))}
                   </div>

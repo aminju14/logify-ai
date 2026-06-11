@@ -93,7 +93,7 @@ export default function Dashboard() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             {greeting()},{' '}
-            <span className="text-[#F4C430]">Maddox</span>{' '}
+            <span className="text-[#F4C430]">MinLabs</span>{' '}
             <span>👋</span>
           </h1>
           <p className="text-[13px] text-gray-400 dark:text-[#666] mt-1">
