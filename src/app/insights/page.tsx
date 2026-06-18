@@ -5,9 +5,10 @@ import { ChevronDown, Star, TrendingUp } from 'lucide-react'
 import AppShell from '@/components/AppShell'
 import DonutChart from '@/components/insights/DonutChart'
 import InsightsAreaChart from '@/components/insights/InsightsAreaChart'
-import { getInsightStats } from '@/lib/storage'
+import { repository } from '@/lib/repository'
+import { insightStats, type InsightStats } from '@/lib/stats'
 
-function StatCard({ label, value, change, unit = '' }: { label: string; value: number | string; change: number; unit?: string }) {
+function StatCard({ label, value, change, unit = '', showChange = true }: { label: string; value: number | string; change: number; unit?: string; showChange?: boolean }) {
   const positive = change >= 0
   return (
     <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#252525] p-4 shadow-sm dark:shadow-none flex-1">
@@ -18,9 +19,13 @@ function StatCard({ label, value, change, unit = '' }: { label: string; value: n
       <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
         {value}{unit}
       </p>
-      <p className={`text-[11px] font-medium ${positive ? 'text-emerald-500' : 'text-red-400'}`}>
-        vs last week {positive ? '+' : ''}{change}{unit}
-      </p>
+      {showChange ? (
+        <p className={`text-[11px] font-medium ${positive ? 'text-emerald-500' : 'text-red-400'}`}>
+          vs last week {positive ? '+' : ''}{change}{unit}
+        </p>
+      ) : (
+        <p className="text-[11px] font-medium text-gray-400 dark:text-[#555]">current</p>
+      )}
     </div>
   )
 }
@@ -33,24 +38,22 @@ function dateRangeLabel() {
   return `${fmt(start)} – ${fmt(now)}, ${now.getFullYear()}`
 }
 
-export default function InsightsPage() {
-  const [stats, setStats] = useState({
-    totalLogs: 0,
-    totalLogsChange: 0,
-    totalHours: 0,
-    totalHoursChange: 0,
-    avgProgress: 76,
-    avgProgressChange: 12,
-    activities: [
-      { label: 'Development', percent: 45 },
-      { label: 'Design', percent: 25 },
-      { label: 'Bug Fix', percent: 15 },
-      { label: 'Meeting', percent: 10 },
-      { label: 'Research', percent: 5 },
-    ],
-  })
+const EMPTY_STATS: InsightStats = {
+  totalLogs: 0,
+  totalLogsChange: 0,
+  activeDays: 0,
+  activeDaysChange: 0,
+  streak: 0,
+  activities: [],
+  dailyCounts: [],
+}
 
-  useEffect(() => { setStats(getInsightStats()) }, [])
+export default function InsightsPage() {
+  const [stats, setStats] = useState<InsightStats>(EMPTY_STATS)
+
+  useEffect(() => {
+    repository.getLogs().then((logs) => setStats(insightStats(logs)))
+  }, [])
 
   return (
     <AppShell>
@@ -70,23 +73,23 @@ export default function InsightsPage() {
           </button>
         </div>
 
-        {/* Overall Progress */}
+        {/* Weekly Activity */}
         <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#252525] p-5 shadow-sm dark:shadow-none mb-4">
-          <h2 className="text-[13px] font-semibold text-gray-900 dark:text-white mb-2">Overall Progress</h2>
+          <h2 className="text-[13px] font-semibold text-gray-900 dark:text-white mb-2">Weekly Activity</h2>
           <div className="flex items-end gap-3 mb-4">
-            <span className="text-4xl font-bold text-[#F4C430]">{stats.avgProgress}%</span>
-            <span className="text-[12px] text-emerald-500 font-medium mb-1">
-              vs last week: +{stats.avgProgressChange}%
+            <span className="text-4xl font-bold text-[#F4C430]">{stats.totalLogs}</span>
+            <span className="text-[12px] text-gray-400 dark:text-[#555] font-medium mb-1">
+              logs in the last 7 days
             </span>
           </div>
-          <InsightsAreaChart />
+          <InsightsAreaChart data={stats.dailyCounts} />
         </div>
 
         {/* Stats row */}
         <div className="flex gap-3 mb-4">
           <StatCard label="Total Logs" value={stats.totalLogs} change={stats.totalLogsChange} />
-          <StatCard label="Total Hours" value={stats.totalHours} change={stats.totalHoursChange} />
-          <StatCard label="Avg. Progress" value={stats.avgProgress} change={stats.avgProgressChange} unit="%" />
+          <StatCard label="Active Days" value={stats.activeDays} change={stats.activeDaysChange} />
+          <StatCard label="Day Streak" value={stats.streak} change={0} showChange={false} />
         </div>
 
         {/* Top Activities */}

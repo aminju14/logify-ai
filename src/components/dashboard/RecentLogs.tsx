@@ -2,24 +2,7 @@
 
 import { ChevronRight } from 'lucide-react'
 import type { WorkLog } from '@/types'
-
-const TAG_COLORS: Record<string, string> = {
-  purple: 'bg-purple-100 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400',
-  blue: 'bg-blue-100 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400',
-  orange: 'bg-orange-100 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400',
-  teal: 'bg-teal-100 text-teal-600 dark:bg-teal-500/10 dark:text-teal-400',
-  sky: 'bg-sky-100 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400',
-  green: 'bg-green-100 text-green-600 dark:bg-green-500/10 dark:text-green-400',
-}
-
-const TAG_ICON: Record<string, string> = {
-  purple: 'bg-purple-400',
-  blue: 'bg-blue-400',
-  orange: 'bg-orange-400',
-  teal: 'bg-teal-400',
-  sky: 'bg-sky-400',
-  green: 'bg-green-400',
-}
+import { tagConfig } from '@/lib/tags'
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr)
@@ -46,14 +29,16 @@ export default function RecentLogs({ logs }: RecentLogsProps) {
             No logs yet. Generate your first report above!
           </p>
         )}
-        {logs.slice(0, 5).map(log => (
+        {logs.slice(0, 5).map(log => {
+          const cfg = tagConfig(log.tag)
+          return (
           <div
             key={log.id}
             className="flex items-center gap-3 bg-white dark:bg-[#1a1a1a] border border-gray-100 dark:border-[#252525] rounded-xl px-4 py-3 hover:border-gray-200 dark:hover:border-[#333] transition-all cursor-pointer group"
           >
             {/* Icon */}
             <div className="w-8 h-8 rounded-lg bg-gray-50 dark:bg-[#252525] flex items-center justify-center shrink-0">
-              <span className={`w-2 h-2 rounded-full ${TAG_ICON[log.tagColor] ?? 'bg-gray-400'}`} />
+              <span className={`w-2 h-2 rounded-full ${cfg.dot}`} />
             </div>
 
             {/* Content */}
@@ -64,14 +49,15 @@ export default function RecentLogs({ logs }: RecentLogsProps) {
 
             {/* Tag + time */}
             <div className="flex items-center gap-2 shrink-0">
-              <span className={`text-[11px] font-medium px-2 py-0.5 rounded-md ${TAG_COLORS[log.tagColor] ?? 'bg-gray-100 text-gray-500'}`}>
+              <span className={`text-[11px] font-medium px-2 py-0.5 rounded-md ${cfg.badgeSoft}`}>
                 {log.tag}
               </span>
               <span className="text-[11px] text-gray-400 dark:text-[#555]">{log.time}</span>
               <ChevronRight size={14} className="text-gray-300 dark:text-[#444] group-hover:text-gray-500 dark:group-hover:text-[#666] transition-colors" />
             </div>
           </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )

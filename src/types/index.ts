@@ -16,7 +16,18 @@ export interface GeneratedReport {
   nextSteps: string[]
 }
 
-export interface Tag {
-  label: string
-  dotColor: string
+export interface Settings {
+  theme: 'dark' | 'light' | 'system'
+  accent: string
+  reportStyle: 'professional' | 'casual'
+  outputLength: 'short' | 'detailed'
+  language: 'english' | 'indonesia'
+}
+
+export const DEFAULT_SETTINGS: Settings = {
+  theme: 'dark',
+  accent: '#F4C430',
+  reportStyle: 'professional',
+  outputLength: 'short',
+  language: 'english',
 }

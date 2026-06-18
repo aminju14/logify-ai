@@ -9,16 +9,11 @@ import ProgressChart from '@/components/right-panel/ProgressChart'
 import QuickStats from '@/components/right-panel/QuickStats'
 import ReportModal from '@/components/modals/ReportModal'
 import LoadingOverlay from '@/components/LoadingOverlay'
-import { getLogs, saveLog, getWeekStats } from '@/lib/storage'
-import type { WorkLog, GeneratedReport } from '@/types'
-
-const TAG_COLOR_MAP: Record<string, string> = {
-  Meeting: 'teal',
-  Development: 'purple',
-  'Bug Fix': 'orange',
-  Research: 'teal',
-  Design: 'sky',
-}
+import { repository } from '@/lib/repository'
+import { weekStats, type WeekStats } from '@/lib/stats'
+import { tagColor } from '@/lib/tags'
+import { useAuth } from '@/components/AuthProvider'
+import type { WorkLog, GeneratedReport, Settings } from '@/types'
 
 function greeting() {
   const h = new Date().getHours()
@@ -30,16 +25,22 @@ function greeting() {
 
 export default function Dashboard() {
   const [logs, setLogs] = useState<WorkLog[]>([])
-  const [stats, setStats] = useState({ logsThisWeek: 0, hoursLogged: 0 })
+  const [stats, setStats] = useState<WeekStats>({ logsThisWeek: 0, activeDaysThisWeek: 0, streak: 0, weekTrend: [] })
+  const [settings, setSettings] = useState<Settings | null>(null)
   const [loading, setLoading] = useState(false)
   const [loadStep, setLoadStep] = useState(0)
   const [report, setReport] = useState<GeneratedReport | null>(null)
   const [pendingInput, setPendingInput] = useState('')
   const [pendingTags, setPendingTags] = useState<string[]>([])
+  const { user } = useAuth()
+  const displayName = user?.email ? user.email.split('@')[0] : 'there'
 
   useEffect(() => {
-    setLogs(getLogs())
-    setStats(getWeekStats())
+    repository.getLogs().then((l) => {
+      setLogs(l)
+      setStats(weekStats(l))
+    })
+    repository.getSettings().then(setSettings)
   }, [])
 
   const generate = useCallback(async (input: string, tags: string[]) => {
@@ -53,7 +54,17 @@ export default function Dashboard() {
       const res = await fetch('/api/generate-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input, tags }),
+        body: JSON.stringify({
+          input,
+          tags,
+          options: settings
+            ? {
+                reportStyle: settings.reportStyle,
+                outputLength: settings.outputLength,
+                language: settings.language,
+              }
+            : undefined,
+        }),
       })
       const data = await res.json()
       if (res.ok) setReport(data as GeneratedReport)
@@ -64,9 +75,9 @@ export default function Dashboard() {
       clearTimeout(t2)
       setLoading(false)
     }
-  }, [])
+  }, [settings])
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!report) return
     const now = new Date()
     const tag = pendingTags[0] ?? 'General'
@@ -75,14 +86,15 @@ export default function Dashboard() {
       date: now.toISOString(),
       title: report.summary.split('.')[0].slice(0, 60),
       tag,
-      tagColor: TAG_COLOR_MAP[tag] ?? 'purple',
+      tagColor: tagColor(tag),
       time: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
       input: pendingInput,
       report,
     }
-    saveLog(log)
-    setLogs(getLogs())
-    setStats(getWeekStats())
+    await repository.saveLog(log)
+    const fresh = await repository.getLogs()
+    setLogs(fresh)
+    setStats(weekStats(fresh))
     setReport(null)
   }
 
@@ -93,7 +105,7 @@ export default function Dashboard() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             {greeting()},{' '}
-            <span className="text-[#F4C430]">MinLabs</span>{' '}
+            <span className="text-[#F4C430]">{displayName}</span>{' '}
             <span>👋</span>
           </h1>
           <p className="text-[13px] text-gray-400 dark:text-[#666] mt-1">
@@ -107,8 +119,12 @@ export default function Dashboard() {
       {/* Right panel */}
       <aside className="w-[290px] shrink-0 overflow-y-auto px-4 py-6 border-l border-gray-100 dark:border-[#1e1e1e] space-y-4">
         <CalendarWidget />
-        <ProgressChart />
-        <QuickStats logsThisWeek={stats.logsThisWeek} hoursLogged={stats.hoursLogged} />
+        <ProgressChart data={stats.weekTrend} />
+        <QuickStats
+          logsThisWeek={stats.logsThisWeek}
+          activeDaysThisWeek={stats.activeDaysThisWeek}
+          streak={stats.streak}
+        />
       </aside>
 
       {loading && <LoadingOverlay step={loadStep} />}

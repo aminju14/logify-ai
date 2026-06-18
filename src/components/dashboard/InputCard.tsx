@@ -2,15 +2,10 @@
 
 import { useState } from 'react'
 import { PenLine, Plus, Sparkles } from 'lucide-react'
-import type { Tag } from '@/types'
+import { TAG_NAMES, tagConfig } from '@/lib/tags'
 
-const TAGS: Tag[] = [
-  { label: 'Meeting', dotColor: 'bg-blue-400' },
-  { label: 'Development', dotColor: 'bg-purple-400' },
-  { label: 'Bug Fix', dotColor: 'bg-orange-400' },
-  { label: 'Research', dotColor: 'bg-teal-400' },
-  { label: 'Design', dotColor: 'bg-sky-400' },
-]
+// Selectable tags (exclude the catch-all "General").
+const SELECTABLE_TAGS = TAG_NAMES.filter((t) => t !== 'General')
 
 interface InputCardProps {
   onGenerate: (input: string, tags: string[]) => void
@@ -63,7 +58,7 @@ export default function InputCard({ onGenerate, loading }: InputCardProps) {
           <Plus size={13} />
           Add tags
         </button>
-        {TAGS.map(({ label, dotColor }) => (
+        {SELECTABLE_TAGS.map((label) => (
           <button
             key={label}
             onClick={() => toggleTag(label)}
@@ -73,7 +68,7 @@ export default function InputCard({ onGenerate, loading }: InputCardProps) {
                 : 'bg-gray-50 dark:bg-[#1e1e1e] border-gray-100 dark:border-[#252525] text-gray-500 dark:text-[#888] hover:border-gray-200 dark:hover:border-[#333]'
             }`}
           >
-            <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+            <span className={`w-1.5 h-1.5 rounded-full ${tagConfig(label).dot}`} />
             {label}
           </button>
         ))}

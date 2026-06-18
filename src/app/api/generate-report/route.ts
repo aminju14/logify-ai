@@ -1,70 +1,80 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
-import type { GeneratedReport } from '@/types'
+import { z } from 'zod'
+import {
+  demoReport,
+  generateReport,
+  type ReportOptions,
+} from '@/lib/report'
+import { rateLimit, pruneRateLimits } from '@/lib/rate-limit'
 
-const PROMPT = `Convert the following daily work notes into a structured professional report.
+const requestSchema = z.object({
+  input: z.string().trim().min(1, 'No input provided').max(5000),
+  tags: z.array(z.string()).max(10).default([]),
+  options: z
+    .object({
+      reportStyle: z.enum(['professional', 'casual']).optional(),
+      outputLength: z.enum(['short', 'detailed']).optional(),
+      language: z.enum(['english', 'indonesia']).optional(),
+    })
+    .optional(),
+})
 
-Return a JSON object with exactly these keys:
-{
-  "summary": "2-3 sentence overview",
-  "accomplishments": ["item1", "item2", ...],
-  "challenges": ["item1", ...],
-  "nextSteps": ["item1", ...]
+function clientIp(req: NextRequest): string {
+  const fwd = req.headers.get('x-forwarded-for')
+  if (fwd) return fwd.split(',')[0].trim()
+  return req.headers.get('x-real-ip') ?? 'unknown'
 }
 
-Keep each list to 2-4 bullet points. Be concise and professional. Return ONLY the JSON object, no markdown.`
-
 export async function POST(req: NextRequest) {
-  const { input, tags } = await req.json()
-
-  if (!input?.trim()) {
-    return NextResponse.json({ error: 'No input provided' }, { status: 400 })
+  // ── Rate limit ──
+  pruneRateLimits()
+  const { allowed, resetAt } = rateLimit(clientIp(req))
+  if (!allowed) {
+    const retryAfter = Math.ceil((resetAt - Date.now()) / 1000)
+    return NextResponse.json(
+      { error: 'Too many requests. Please slow down.' },
+      { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+    )
   }
 
-  const apiKey = process.env.OPENAI_API_KEY
-
-  // Demo mode when no API key
-  if (!apiKey) {
-    const demo: GeneratedReport = {
-      summary: `Productive work session covering: ${input.slice(0, 80)}${input.length > 80 ? '...' : ''}. Work was well-structured and aligned with team goals.`,
-      accomplishments: [
-        'Completed assigned tasks efficiently',
-        'Collaborated with team members effectively',
-        tags.length > 0 ? `Focused on ${tags.join(', ')} activities` : 'Maintained high quality output',
-      ],
-      challenges: [
-        'Time management across multiple priorities',
-        'Coordinating dependencies with other teams',
-      ],
-      nextSteps: [
-        'Follow up on pending items from today',
-        'Review progress in tomorrow\'s standup',
-        'Document outcomes for team visibility',
-      ],
-    }
-    await new Promise(r => setTimeout(r, 1200))
-    return NextResponse.json(demo)
-  }
-
+  // ── Validate input ──
+  let body: unknown
   try {
-    const client = new OpenAI({ apiKey })
-    const tagNote = tags.length > 0 ? `\n\nWork categories: ${tags.join(', ')}` : ''
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
 
-    const completion = await client.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        { role: 'system', content: PROMPT },
-        { role: 'user', content: `${input}${tagNote}` },
-      ],
-      temperature: 0.4,
-      max_tokens: 600,
-    })
+  const parsed = requestSchema.safeParse(body)
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? 'Invalid request' },
+      { status: 400 },
+    )
+  }
+  const { input, tags, options } = parsed.data
 
-    const raw = completion.choices[0]?.message?.content ?? '{}'
-    const report: GeneratedReport = JSON.parse(raw)
+  // ── Demo mode when no API key ──
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!apiKey) {
+    await new Promise((r) => setTimeout(r, 1200))
+    return NextResponse.json(demoReport(input, tags))
+  }
+
+  // ── Generate via Claude ──
+  try {
+    const report = await generateReport(
+      apiKey,
+      input,
+      tags,
+      (options ?? {}) as ReportOptions,
+    )
     return NextResponse.json(report)
   } catch (err) {
-    console.error('OpenAI error:', err)
-    return NextResponse.json({ error: 'Failed to generate report' }, { status: 500 })
+    console.error('Report generation failed:', err)
+    return NextResponse.json(
+      { error: 'Failed to generate report' },
+      { status: 500 },
+    )
   }
 }

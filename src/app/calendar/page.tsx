@@ -4,17 +4,11 @@ import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import Link from 'next/link'
 import AppShell from '@/components/AppShell'
-import { getLogs } from '@/lib/storage'
+import { repository } from '@/lib/repository'
+import { tagConfig } from '@/lib/tags'
 import type { WorkLog } from '@/types'
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-
-const TAG_COLORS: Record<string, string> = {
-  purple: 'bg-purple-100 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400',
-  sky: 'bg-sky-100 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400',
-  orange: 'bg-orange-100 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400',
-  teal: 'bg-teal-100 text-teal-600 dark:bg-teal-500/10 dark:text-teal-400',
-}
 
 interface CalDay {
   date: Date
@@ -55,7 +49,7 @@ export default function CalendarPage() {
   const [selected, setSelected] = useState(today)
   const [logs, setLogs] = useState<WorkLog[]>([])
 
-  useEffect(() => { setLogs(getLogs()) }, [])
+  useEffect(() => { repository.getLogs().then(setLogs) }, [])
 
   const days = buildMonthDays(viewYear, viewMonth)
   const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
@@ -172,7 +166,7 @@ export default function CalendarPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[13px] font-medium text-gray-900 dark:text-white truncate">{log.title}</p>
-                    <span className={`inline-block text-[11px] font-medium px-2 py-0.5 rounded-md mt-1 ${TAG_COLORS[log.tagColor] ?? 'bg-gray-100 text-gray-500'}`}>
+                    <span className={`inline-block text-[11px] font-medium px-2 py-0.5 rounded-md mt-1 ${tagConfig(log.tag).badgeSoft}`}>
                       {log.tag}
                     </span>
                   </div>
