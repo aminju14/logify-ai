@@ -7,6 +7,8 @@ import {
 } from 'lucide-react'
 import AppShell from '@/components/AppShell'
 import { useTheme } from '@/components/ThemeProvider'
+import { repository } from '@/lib/repository'
+import { DEFAULT_SETTINGS, type Settings } from '@/types'
 
 /* ── Toggle ── */
 function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
@@ -71,12 +73,37 @@ type ThemeMode = 'dark' | 'light' | 'system'
 export default function SettingsPage() {
   const { theme, toggleTheme } = useTheme()
   const [themeMode, setThemeMode] = useState<ThemeMode>('dark')
-  const [accent, setAccent] = useState('#F4C430')
-  const [reportStyle, setReportStyle] = useState<'professional' | 'casual'>('professional')
-  const [outputLength, setOutputLength] = useState<'short' | 'detailed'>('short')
-  const [language, setLanguage] = useState<'english' | 'indonesia'>('english')
+  const [accent, setAccent] = useState(DEFAULT_SETTINGS.accent)
+  const [reportStyle, setReportStyle] = useState<'professional' | 'casual'>(DEFAULT_SETTINGS.reportStyle)
+  const [outputLength, setOutputLength] = useState<'short' | 'detailed'>(DEFAULT_SETTINGS.outputLength)
+  const [language, setLanguage] = useState<'english' | 'indonesia'>(DEFAULT_SETTINGS.language)
   const [notif, setNotif] = useState({ daily: true, weekly: true, product: false })
   const [priv, setPriv] = useState({ saveLogs: true, analytics: false })
+  const [loaded, setLoaded] = useState(false)
+
+  // Load persisted settings on mount.
+  useEffect(() => {
+    repository.getSettings().then((s) => {
+      setAccent(s.accent)
+      setReportStyle(s.reportStyle)
+      setOutputLength(s.outputLength)
+      setLanguage(s.language)
+      setLoaded(true)
+    })
+  }, [])
+
+  // Persist whenever an AI/appearance preference changes (after initial load).
+  useEffect(() => {
+    if (!loaded) return
+    const settings: Settings = {
+      theme: themeMode,
+      accent,
+      reportStyle,
+      outputLength,
+      language,
+    }
+    repository.saveSettings(settings)
+  }, [loaded, themeMode, accent, reportStyle, outputLength, language])
 
   useEffect(() => {
     setThemeMode(theme === 'dark' ? 'dark' : 'light')

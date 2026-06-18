@@ -4,11 +4,11 @@ import { useState, useEffect, useMemo } from 'react'
 import {
   Search, SlidersHorizontal, Plus, CalendarDays, ChevronDown, MoreVertical,
   ChevronRight, Users, Code2, Bug, BookOpen, Palette, FileText,
-  Clock, LayoutList, TrendingUp, Star, Sparkles, FileDown, Zap,
+  LayoutList, TrendingUp, Star, Sparkles, FileDown, Zap,
 } from 'lucide-react'
 import Link from 'next/link'
 import AppShell from '@/components/AppShell'
-import { getLogs } from '@/lib/storage'
+import { repository } from '@/lib/repository'
 import type { WorkLog } from '@/types'
 
 /* ── Tag config ── */
@@ -89,7 +89,6 @@ function TrendChart({ data }: { data: { label: string; value: number }[] }) {
 
 /* ── Period filter ── */
 type Period = 'today' | 'week' | 'month' | 'year'
-const BASE = [8, 10, 7, 12, 15, 12, 17]
 
 export default function MyLogsPage() {
   const [allLogs, setAllLogs] = useState<WorkLog[]>([])
@@ -97,7 +96,7 @@ export default function MyLogsPage() {
   const [query, setQuery] = useState('')
   const [sortNewest, setSortNewest] = useState(true)
 
-  useEffect(() => { setAllLogs(getLogs()) }, [])
+  useEffect(() => { repository.getLogs().then(setAllLogs) }, [])
 
   const filtered = useMemo(() => {
     const now = new Date()
@@ -118,9 +117,11 @@ export default function MyLogsPage() {
     const cnts: Record<string, number> = {}
     filtered.forEach(l => { cnts[l.tag] = (cnts[l.tag] ?? 0) + 1 })
     const [topTag, topCnt] = Object.entries(cnts).sort((a, b) => b[1] - a[1])[0] ?? ['None', 0]
+    const activeDays = new Set(filtered.map(l => new Date(l.date).toDateString())).size
     return {
       total: filtered.length,
-      hours: Math.round(filtered.length * 3.2 * 10) / 10,
+      activeDays,
+      tagCount: Object.keys(cnts).length,
       topTag, topPct: filtered.length ? Math.round((topCnt / filtered.length) * 100) : 0,
     }
   }, [filtered])
@@ -129,13 +130,25 @@ export default function MyLogsPage() {
     const d = new Date(); d.setDate(d.getDate() - (6 - i)); d.setHours(0, 0, 0, 0)
     const nd = new Date(d); nd.setDate(d.getDate() + 1)
     const cnt = allLogs.filter(l => { const ld = new Date(l.date); return ld >= d && ld < nd }).length
-    return { label: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), value: cnt + BASE[d.getDay()] }
+    return { label: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), value: cnt }
   }), [allLogs])
 
   const topTags = useMemo(() => {
     const c: Record<string, number> = {}
     allLogs.forEach(l => { c[l.tag] = (c[l.tag] ?? 0) + 1 })
     return Object.entries(c).sort((a, b) => b[1] - a[1]).slice(0, 5)
+  }, [allLogs])
+
+  // Real insight derived from logs: which weekday you log on most.
+  const insight = useMemo(() => {
+    if (allLogs.length === 0) return null
+    const byDay: Record<string, number> = {}
+    allLogs.forEach(l => {
+      const day = new Date(l.date).toLocaleDateString('en-US', { weekday: 'long' })
+      byDay[day] = (byDay[day] ?? 0) + 1
+    })
+    const [day, count] = Object.entries(byDay).sort((a, b) => b[1] - a[1])[0]
+    return { day, count }
   }, [allLogs])
 
   const groups = groupByDate(filtered)
@@ -184,10 +197,10 @@ export default function MyLogsPage() {
         {/* Stats cards */}
         <div className="grid grid-cols-4 gap-3 mb-5">
           {[
-            { label: 'Total Logs', val: stats.total, sub: 'vs yesterday +3', icon: LayoutList, ibg: 'bg-purple-500/10', ic: 'text-purple-400', subColor: 'text-emerald-500' },
-            { label: 'Total Hours', val: stats.hours, sub: 'vs yesterday +4.2h', icon: Clock, ibg: 'bg-blue-500/10', ic: 'text-blue-400', subColor: 'text-emerald-500' },
-            { label: 'Top Activity', val: stats.topTag, sub: `${stats.topPct}% of your day`, icon: TrendingUp, ibg: 'bg-emerald-500/10', ic: 'text-emerald-400', subColor: 'text-gray-400 dark:text-[#555]' },
-            { label: 'Productivity Score', val: '76%', sub: 'Great job!', icon: Star, ibg: 'bg-[#F4C430]/10', ic: 'text-[#F4C430]', subColor: 'text-emerald-500' },
+            { label: 'Total Logs', val: stats.total, sub: 'in selected period', icon: LayoutList, ibg: 'bg-purple-500/10', ic: 'text-purple-400', subColor: 'text-gray-400 dark:text-[#555]' },
+            { label: 'Active Days', val: stats.activeDays, sub: 'days with a log', icon: CalendarDays, ibg: 'bg-blue-500/10', ic: 'text-blue-400', subColor: 'text-gray-400 dark:text-[#555]' },
+            { label: 'Top Activity', val: stats.topTag, sub: stats.total ? `${stats.topPct}% of logs` : 'no logs yet', icon: TrendingUp, ibg: 'bg-emerald-500/10', ic: 'text-emerald-400', subColor: 'text-gray-400 dark:text-[#555]' },
+            { label: 'Tags Used', val: stats.tagCount, sub: 'distinct categories', icon: Star, ibg: 'bg-[#F4C430]/10', ic: 'text-[#F4C430]', subColor: 'text-gray-400 dark:text-[#555]' },
           ].map(({ label, val, sub, icon: Icon, ibg, ic, subColor }) => (
             <div key={label} className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#252525] p-4 shadow-sm dark:shadow-none">
               <div className="flex items-start justify-between mb-3">
@@ -286,22 +299,19 @@ export default function MyLogsPage() {
             <h3 className="text-[13px] font-semibold text-gray-900 dark:text-white">AI Insight</h3>
             <Sparkles size={13} className="text-[#F4C430]" />
           </div>
-          <p className="text-[11px] text-gray-400 dark:text-[#555] mb-3">Here&apos;s what AI found from your logs.</p>
+          <p className="text-[11px] text-gray-400 dark:text-[#555] mb-3">Based on your logged activity.</p>
           <div className="flex items-start gap-3 bg-gray-50 dark:bg-[#141414] rounded-xl p-3">
             <div className="w-8 h-8 rounded-xl bg-[#F4C430]/10 flex items-center justify-center shrink-0">
               <Zap size={13} className="text-[#F4C430]" />
             </div>
             <div>
               <p className="text-[12px] text-gray-700 dark:text-[#ccc] leading-relaxed">
-                You are most productive in the afternoon (2–5 PM).
+                {insight
+                  ? `You log most often on ${insight.day} (${insight.count} ${insight.count === 1 ? 'log' : 'logs'}).`
+                  : 'Log your work to start seeing patterns here.'}
               </p>
-              <p className="text-[11px] text-[#F4C430] font-semibold mt-1.5">Keep it up!</p>
+              {insight && <p className="text-[11px] text-[#F4C430] font-semibold mt-1.5">Keep it up!</p>}
             </div>
-          </div>
-          <div className="flex items-center justify-center gap-1.5 mt-3">
-            <span className="w-5 h-1.5 rounded-full bg-[#F4C430]" />
-            <span className="w-1.5 h-1.5 rounded-full bg-gray-200 dark:bg-[#333]" />
-            <span className="w-1.5 h-1.5 rounded-full bg-gray-200 dark:bg-[#333]" />
           </div>
         </div>
 

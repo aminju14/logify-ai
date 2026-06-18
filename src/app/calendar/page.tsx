@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import Link from 'next/link'
 import AppShell from '@/components/AppShell'
-import { getLogs } from '@/lib/storage'
+import { repository } from '@/lib/repository'
 import type { WorkLog } from '@/types'
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -55,7 +55,7 @@ export default function CalendarPage() {
   const [selected, setSelected] = useState(today)
   const [logs, setLogs] = useState<WorkLog[]>([])
 
-  useEffect(() => { setLogs(getLogs()) }, [])
+  useEffect(() => { repository.getLogs().then(setLogs) }, [])
 
   const days = buildMonthDays(viewYear, viewMonth)
   const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
