@@ -16,11 +16,6 @@ export interface GeneratedReport {
   nextSteps: string[]
 }
 
-export interface Tag {
-  label: string
-  dotColor: string
-}
-
 export interface Settings {
   theme: 'dark' | 'light' | 'system'
   accent: string

@@ -3,24 +3,13 @@
 import { useState, useEffect, useMemo } from 'react'
 import {
   Search, SlidersHorizontal, Plus, CalendarDays, ChevronDown, MoreVertical,
-  ChevronRight, Users, Code2, Bug, BookOpen, Palette, FileText,
-  LayoutList, TrendingUp, Star, Sparkles, FileDown, Zap,
+  ChevronRight, LayoutList, TrendingUp, Star, Sparkles, FileDown, Zap,
 } from 'lucide-react'
 import Link from 'next/link'
 import AppShell from '@/components/AppShell'
 import { repository } from '@/lib/repository'
+import { tagConfig as tcfg } from '@/lib/tags'
 import type { WorkLog } from '@/types'
-
-/* ── Tag config ── */
-const TAG_CFG: Record<string, { iconBg: string; Icon: React.ElementType; iconColor: string; dot: string; badge: string }> = {
-  Meeting:     { iconBg: 'bg-purple-500/20',  Icon: Users,    iconColor: 'text-purple-400',  dot: 'bg-purple-400',  badge: 'bg-purple-500/10 text-purple-400'  },
-  Development: { iconBg: 'bg-indigo-500/20',  Icon: Code2,    iconColor: 'text-indigo-400',  dot: 'bg-indigo-400',  badge: 'bg-indigo-500/10 text-indigo-400'  },
-  'Bug Fix':   { iconBg: 'bg-orange-500/20',  Icon: Bug,      iconColor: 'text-orange-400',  dot: 'bg-orange-400',  badge: 'bg-orange-500/10 text-orange-400'  },
-  Research:    { iconBg: 'bg-emerald-500/20', Icon: BookOpen, iconColor: 'text-emerald-400', dot: 'bg-emerald-400', badge: 'bg-emerald-500/10 text-emerald-400' },
-  Design:      { iconBg: 'bg-sky-500/20',     Icon: Palette,  iconColor: 'text-sky-400',     dot: 'bg-sky-400',     badge: 'bg-sky-500/10 text-sky-400'     },
-  General:     { iconBg: 'bg-gray-500/20',    Icon: FileText, iconColor: 'text-gray-400',    dot: 'bg-gray-400',    badge: 'bg-gray-500/10 text-gray-400'    },
-}
-const tcfg = (tag: string) => TAG_CFG[tag] ?? TAG_CFG['General']
 
 /* ── Date helpers ── */
 function sameDay(a: Date, b: Date) {

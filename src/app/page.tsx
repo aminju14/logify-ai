@@ -11,15 +11,8 @@ import ReportModal from '@/components/modals/ReportModal'
 import LoadingOverlay from '@/components/LoadingOverlay'
 import { repository } from '@/lib/repository'
 import { weekStats, type WeekStats } from '@/lib/stats'
+import { tagColor } from '@/lib/tags'
 import type { WorkLog, GeneratedReport, Settings } from '@/types'
-
-const TAG_COLOR_MAP: Record<string, string> = {
-  Meeting: 'teal',
-  Development: 'purple',
-  'Bug Fix': 'orange',
-  Research: 'teal',
-  Design: 'sky',
-}
 
 function greeting() {
   const h = new Date().getHours()
@@ -90,7 +83,7 @@ export default function Dashboard() {
       date: now.toISOString(),
       title: report.summary.split('.')[0].slice(0, 60),
       tag,
-      tagColor: TAG_COLOR_MAP[tag] ?? 'purple',
+      tagColor: tagColor(tag),
       time: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
       input: pendingInput,
       report,
