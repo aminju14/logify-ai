@@ -16,7 +16,7 @@ export function isSupabaseConfigured(): boolean {
 }
 
 let client: SupabaseClient | null = null
-function getClient(): SupabaseClient {
+export function getClient(): SupabaseClient {
   if (!client) {
     if (!url || !anonKey) throw new Error('Supabase is not configured')
     client = createClient(url, anonKey)

@@ -5,8 +5,10 @@ import {
   User, Palette, Globe, Bell, Shield, Crown, ChevronRight,
   Camera, Sparkles, CalendarDays, Mail, Megaphone, Database, BarChart2,
 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import AppShell from '@/components/AppShell'
 import { useTheme } from '@/components/ThemeProvider'
+import { useAuth } from '@/components/AuthProvider'
 import { repository } from '@/lib/repository'
 import { DEFAULT_SETTINGS, type Settings } from '@/types'
 
@@ -72,6 +74,9 @@ type ThemeMode = 'dark' | 'light' | 'system'
 
 export default function SettingsPage() {
   const { theme, toggleTheme } = useTheme()
+  const { user, enabled: authEnabled, signOut } = useAuth()
+  const router = useRouter()
+  const [deleting, setDeleting] = useState(false)
   const [themeMode, setThemeMode] = useState<ThemeMode>('dark')
   const [accent, setAccent] = useState(DEFAULT_SETTINGS.accent)
   const [reportStyle, setReportStyle] = useState<'professional' | 'casual'>(DEFAULT_SETTINGS.reportStyle)
@@ -122,6 +127,28 @@ export default function SettingsPage() {
   const toggleNotif = (k: keyof typeof notif) => setNotif(n => ({ ...n, [k]: !n[k] }))
   const togglePriv = (k: keyof typeof priv) => setPriv(p => ({ ...p, [k]: !p[k] }))
 
+  const handleDeleteAll = async () => {
+    if (!window.confirm('Permanently delete all your logs and reset settings? This cannot be undone.')) return
+    setDeleting(true)
+    try {
+      await repository.clearLogs()
+      await repository.saveSettings(DEFAULT_SETTINGS)
+      // Reflect the reset in the UI.
+      setAccent(DEFAULT_SETTINGS.accent)
+      setReportStyle(DEFAULT_SETTINGS.reportStyle)
+      setOutputLength(DEFAULT_SETTINGS.outputLength)
+      setLanguage(DEFAULT_SETTINGS.language)
+      window.alert('All data deleted.')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const handleLogout = async () => {
+    await signOut()
+    router.replace('/login')
+  }
+
   return (
     <AppShell>
       <main className="flex-1 overflow-y-auto px-6 py-6">
@@ -151,9 +178,12 @@ export default function SettingsPage() {
                   </button>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[15px] font-semibold text-gray-900 dark:text-white">Minlabs</p>
-                  <p className="text-[13px] text-gray-400 dark:text-[#666]">minlabs@example.com</p>
-                  <p className="text-[11px] text-gray-300 dark:text-[#444] mt-0.5">Member since April 27, 2026</p>
+                  <p className="text-[15px] font-semibold text-gray-900 dark:text-white truncate">
+                    {user?.email ? user.email.split('@')[0] : 'Guest'}
+                  </p>
+                  <p className="text-[13px] text-gray-400 dark:text-[#666] truncate">
+                    {user?.email ?? 'Using local storage (no account)'}
+                  </p>
                 </div>
                 <button className="px-4 py-2 rounded-xl border border-gray-200 dark:border-[#333] text-[13px] font-medium text-gray-700 dark:text-[#ccc] hover:border-gray-300 dark:hover:border-[#444] hover:bg-gray-50 dark:hover:bg-white/5 transition-all shrink-0">
                   Edit Profile
@@ -292,8 +322,12 @@ export default function SettingsPage() {
               </div>
               <Divider />
               <div className="flex items-center gap-4">
-                <button className="px-4 py-2 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-500 text-[13px] font-semibold hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors shrink-0">
-                  Delete all data
+                <button
+                  onClick={handleDeleteAll}
+                  disabled={deleting}
+                  className="px-4 py-2 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-500 text-[13px] font-semibold hover:bg-red-100 dark:hover:bg-red-500/20 disabled:opacity-60 transition-colors shrink-0"
+                >
+                  {deleting ? 'Deleting…' : 'Delete all data'}
                 </button>
                 <p className="text-[11px] text-gray-400 dark:text-[#555] leading-relaxed">
                   This will permanently delete all your data and cannot be undone.
@@ -321,18 +355,22 @@ export default function SettingsPage() {
               </div>
             </Card>
 
-            {/* Account */}
-            <Card icon={<User size={15} className="text-[#F4C430]" />} title="Account">
-              <button className="w-full flex items-center justify-between py-1 group">
-                <span className="text-[13px] font-semibold text-red-500 group-hover:text-red-600 transition-colors">
-                  Logout
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="text-[12px] text-gray-400 dark:text-[#555]">Sign out from your account</span>
-                  <ChevronRight size={14} className="text-gray-300 dark:text-[#444] group-hover:text-gray-500 dark:group-hover:text-[#666] transition-colors" />
-                </div>
-              </button>
-            </Card>
+            {/* Account — only meaningful when auth (Supabase) is active */}
+            {authEnabled && (
+              <Card icon={<User size={15} className="text-[#F4C430]" />} title="Account">
+                <button onClick={handleLogout} className="w-full flex items-center justify-between py-1 group">
+                  <span className="text-[13px] font-semibold text-red-500 group-hover:text-red-600 transition-colors">
+                    Logout
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[12px] text-gray-400 dark:text-[#555]">
+                      {user?.email ? `Signed in as ${user.email}` : 'Sign out from your account'}
+                    </span>
+                    <ChevronRight size={14} className="text-gray-300 dark:text-[#444] group-hover:text-gray-500 dark:group-hover:text-[#666] transition-colors" />
+                  </div>
+                </button>
+              </Card>
+            )}
 
           </div>{/* end RIGHT */}
 

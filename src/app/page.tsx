@@ -12,6 +12,7 @@ import LoadingOverlay from '@/components/LoadingOverlay'
 import { repository } from '@/lib/repository'
 import { weekStats, type WeekStats } from '@/lib/stats'
 import { tagColor } from '@/lib/tags'
+import { useAuth } from '@/components/AuthProvider'
 import type { WorkLog, GeneratedReport, Settings } from '@/types'
 
 function greeting() {
@@ -31,6 +32,8 @@ export default function Dashboard() {
   const [report, setReport] = useState<GeneratedReport | null>(null)
   const [pendingInput, setPendingInput] = useState('')
   const [pendingTags, setPendingTags] = useState<string[]>([])
+  const { user } = useAuth()
+  const displayName = user?.email ? user.email.split('@')[0] : 'there'
 
   useEffect(() => {
     repository.getLogs().then((l) => {
@@ -102,7 +105,7 @@ export default function Dashboard() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             {greeting()},{' '}
-            <span className="text-[#F4C430]">MinLabs</span>{' '}
+            <span className="text-[#F4C430]">{displayName}</span>{' '}
             <span>👋</span>
           </h1>
           <p className="text-[13px] text-gray-400 dark:text-[#666] mt-1">

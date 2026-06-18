@@ -9,6 +9,7 @@ import Link from 'next/link'
 import AppShell from '@/components/AppShell'
 import { repository } from '@/lib/repository'
 import { tagConfig as tcfg } from '@/lib/tags'
+import { exportLogsToPdf } from '@/lib/export'
 import type { WorkLog } from '@/types'
 
 /* ── Date helpers ── */
@@ -143,7 +144,7 @@ export default function MyLogsPage() {
   const groups = groupByDate(filtered)
 
   return (
-    <AppShell>
+    <AppShell search={{ value: query, onChange: setQuery, placeholder: 'Search logs...' }}>
       {/* ── Main content ── */}
       <main className="flex-1 overflow-y-auto px-6 py-6 min-w-0">
 
@@ -332,7 +333,11 @@ export default function MyLogsPage() {
         <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-100 dark:border-[#252525] p-4 shadow-sm dark:shadow-none">
           <h3 className="text-[13px] font-semibold text-gray-900 dark:text-white mb-0.5">Export Logs</h3>
           <p className="text-[11px] text-gray-400 dark:text-[#555] mb-3">Download your logs and reports.</p>
-          <button className="w-full flex items-center justify-center gap-2 py-2.5 text-[12px] text-gray-600 dark:text-[#ccc] font-medium bg-gray-50 dark:bg-[#252525] rounded-xl hover:bg-gray-100 dark:hover:bg-[#2e2e2e] border border-gray-100 dark:border-[#333] transition-colors">
+          <button
+            onClick={() => exportLogsToPdf(filtered)}
+            disabled={filtered.length === 0}
+            className="w-full flex items-center justify-center gap-2 py-2.5 text-[12px] text-gray-600 dark:text-[#ccc] font-medium bg-gray-50 dark:bg-[#252525] rounded-xl hover:bg-gray-100 dark:hover:bg-[#2e2e2e] border border-gray-100 dark:border-[#333] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
             <FileDown size={13} /> Export as PDF
           </button>
         </div>

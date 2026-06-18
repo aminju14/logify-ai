@@ -1,10 +1,34 @@
 'use client'
 
-import { ReactNode } from 'react'
-import { Search, Bell } from 'lucide-react'
+import { ReactNode, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { Search, Bell, Loader2 } from 'lucide-react'
 import Sidebar from './Sidebar'
+import { useAuth } from './AuthProvider'
 
-export default function AppShell({ children }: { children: ReactNode }) {
+interface AppShellProps {
+  children: ReactNode
+  /** Optional global search bound to a page's filter. */
+  search?: { value: string; onChange: (v: string) => void; placeholder?: string }
+}
+
+export default function AppShell({ children, search }: AppShellProps) {
+  const router = useRouter()
+  const { user, loading, enabled } = useAuth()
+
+  // Route guard: when auth is active, bounce unauthenticated users to /login.
+  useEffect(() => {
+    if (enabled && !loading && !user) router.replace('/login')
+  }, [enabled, loading, user, router])
+
+  if (enabled && (loading || !user)) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-[#0d0d0d]">
+        <Loader2 className="animate-spin text-[#F4C430]" size={24} />
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
@@ -16,8 +40,11 @@ export default function AppShell({ children }: { children: ReactNode }) {
               <Search size={13} className="text-gray-300 dark:text-[#444] shrink-0" />
               <input
                 type="text"
-                placeholder="Search anything..."
-                className="flex-1 bg-transparent text-[12px] text-gray-600 dark:text-[#888] placeholder-gray-300 dark:placeholder-[#444] focus:outline-none"
+                value={search?.value ?? ''}
+                onChange={(e) => search?.onChange(e.target.value)}
+                disabled={!search}
+                placeholder={search?.placeholder ?? 'Search anything...'}
+                className="flex-1 bg-transparent text-[12px] text-gray-600 dark:text-[#888] placeholder-gray-300 dark:placeholder-[#444] focus:outline-none disabled:cursor-not-allowed"
               />
             </div>
           </div>
