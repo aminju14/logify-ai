@@ -85,6 +85,8 @@ export default function MyLogsPage() {
   const [period, setPeriod] = useState<Period>('today')
   const [query, setQuery] = useState('')
   const [sortNewest, setSortNewest] = useState(true)
+  const [tagFilter, setTagFilter] = useState<string | null>(null)
+  const [filterOpen, setFilterOpen] = useState(false)
 
   useEffect(() => { repository.getLogs().then(setAllLogs) }, [])
 
@@ -93,6 +95,7 @@ export default function MyLogsPage() {
     const startOf = (n: number) => { const d = new Date(now); d.setDate(now.getDate() - n); d.setHours(0,0,0,0); return d }
     let logs = allLogs
     if (query) { const q = query.toLowerCase(); logs = logs.filter(l => l.title.toLowerCase().includes(q) || l.tag.toLowerCase().includes(q)) }
+    if (tagFilter) logs = logs.filter(l => l.tag === tagFilter)
     logs = logs.filter(l => {
       const d = new Date(l.date)
       if (period === 'today') return sameDay(d, now)
@@ -101,7 +104,13 @@ export default function MyLogsPage() {
       return d.getFullYear() === now.getFullYear()
     })
     return sortNewest ? [...logs].sort((a, b) => +new Date(b.date) - +new Date(a.date)) : logs
-  }, [allLogs, period, query, sortNewest])
+  }, [allLogs, period, query, sortNewest, tagFilter])
+
+  // Tags actually present in the user's logs, for the filter dropdown.
+  const availableTags = useMemo(
+    () => Array.from(new Set(allLogs.map(l => l.tag))).sort(),
+    [allLogs],
+  )
 
   const stats = useMemo(() => {
     const cnts: Record<string, number> = {}
@@ -160,9 +169,47 @@ export default function MyLogsPage() {
               <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search logs..."
                 className="flex-1 bg-transparent text-[12px] text-gray-600 dark:text-[#888] placeholder-gray-300 dark:placeholder-[#444] focus:outline-none" />
             </div>
-            <button className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 dark:bg-[#1a1a1a] border border-gray-100 dark:border-[#252525] rounded-xl text-[12px] text-gray-500 dark:text-[#666] hover:border-gray-200 dark:hover:border-[#333] transition-colors">
-              <SlidersHorizontal size={13} /> Filter
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setFilterOpen(o => !o)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] border transition-colors ${
+                  tagFilter
+                    ? 'bg-[#F4C430]/10 border-[#F4C430]/40 text-[#b8860b] dark:text-[#F4C430]'
+                    : 'bg-gray-50 dark:bg-[#1a1a1a] border-gray-100 dark:border-[#252525] text-gray-500 dark:text-[#666] hover:border-gray-200 dark:hover:border-[#333]'
+                }`}
+              >
+                <SlidersHorizontal size={13} /> {tagFilter ?? 'Filter'}
+              </button>
+              {filterOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setFilterOpen(false)} />
+                  <div className="absolute right-0 mt-1.5 w-44 bg-white dark:bg-[#1a1a1a] border border-gray-100 dark:border-[#252525] rounded-xl shadow-lg z-20 py-1.5">
+                    <button
+                      onClick={() => { setTagFilter(null); setFilterOpen(false) }}
+                      className={`w-full text-left px-3 py-1.5 text-[12px] hover:bg-gray-50 dark:hover:bg-white/5 ${!tagFilter ? 'text-gray-900 dark:text-white font-medium' : 'text-gray-500 dark:text-[#888]'}`}
+                    >
+                      All tags
+                    </button>
+                    {availableTags.length === 0 && (
+                      <p className="px-3 py-1.5 text-[12px] text-gray-400 dark:text-[#555]">No tags yet</p>
+                    )}
+                    {availableTags.map(tag => {
+                      const c = tcfg(tag)
+                      return (
+                        <button
+                          key={tag}
+                          onClick={() => { setTagFilter(tag); setFilterOpen(false) }}
+                          className={`w-full flex items-center gap-2 text-left px-3 py-1.5 text-[12px] hover:bg-gray-50 dark:hover:bg-white/5 ${tagFilter === tag ? 'text-gray-900 dark:text-white font-medium' : 'text-gray-500 dark:text-[#888]'}`}
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />
+                          {tag}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
             <Link href="/" className="flex items-center gap-1.5 px-4 py-2 bg-[#F4C430] hover:bg-[#e0b420] text-black text-[12px] font-bold rounded-xl transition-colors">
               <Plus size={14} /> New Log
             </Link>

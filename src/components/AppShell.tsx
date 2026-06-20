@@ -1,8 +1,8 @@
 'use client'
 
-import { ReactNode, useEffect } from 'react'
+import { ReactNode, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, Bell, Loader2 } from 'lucide-react'
+import { Search, Bell, Loader2, BellOff } from 'lucide-react'
 import Sidebar from './Sidebar'
 import { useAuth } from './AuthProvider'
 
@@ -15,6 +15,7 @@ interface AppShellProps {
 export default function AppShell({ children, search }: AppShellProps) {
   const router = useRouter()
   const { user, loading, enabled } = useAuth()
+  const [notifOpen, setNotifOpen] = useState(false)
 
   // Route guard: when auth is active, bounce unauthenticated users to /login.
   useEffect(() => {
@@ -49,10 +50,31 @@ export default function AppShell({ children, search }: AppShellProps) {
             </div>
           </div>
           <div className="flex-1 flex justify-end">
-            <button className="relative p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-              <Bell size={16} className="text-gray-400 dark:text-[#555]" />
-              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[#F4C430] rounded-full" />
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setNotifOpen((o) => !o)}
+                className="relative p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+              >
+                <Bell size={16} className="text-gray-400 dark:text-[#555]" />
+              </button>
+              {notifOpen && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setNotifOpen(false)} />
+                  <div className="absolute right-0 mt-1.5 w-64 bg-white dark:bg-[#1a1a1a] border border-gray-100 dark:border-[#252525] rounded-xl shadow-lg z-20 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-gray-50 dark:border-[#252525]">
+                      <p className="text-[13px] font-semibold text-gray-900 dark:text-white">Notifications</p>
+                    </div>
+                    <div className="flex flex-col items-center justify-center py-8 px-4">
+                      <BellOff size={22} className="text-gray-300 dark:text-[#444] mb-2" />
+                      <p className="text-[12px] text-gray-400 dark:text-[#666]">No notifications yet</p>
+                      <p className="text-[11px] text-gray-300 dark:text-[#555] mt-0.5 text-center">
+                        You&apos;re all caught up.
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </header>
         <div className="flex-1 flex overflow-hidden">

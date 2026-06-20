@@ -33,7 +33,8 @@ export default function Dashboard() {
   const [pendingInput, setPendingInput] = useState('')
   const [pendingTags, setPendingTags] = useState<string[]>([])
   const { user } = useAuth()
-  const displayName = user?.email ? user.email.split('@')[0] : 'there'
+  const displayName =
+    settings?.displayName || (user?.email ? user.email.split('@')[0] : 'there')
 
   useEffect(() => {
     repository.getLogs().then((l) => {

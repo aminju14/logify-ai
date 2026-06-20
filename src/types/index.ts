@@ -22,6 +22,8 @@ export interface Settings {
   reportStyle: 'professional' | 'casual'
   outputLength: 'short' | 'detailed'
   language: 'english' | 'indonesia'
+  /** Optional user-set display name, used in greetings and the profile card. */
+  displayName: string
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -30,4 +32,5 @@ export const DEFAULT_SETTINGS: Settings = {
   reportStyle: 'professional',
   outputLength: 'short',
   language: 'english',
+  displayName: '',
 }

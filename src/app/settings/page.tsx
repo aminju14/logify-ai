@@ -9,6 +9,8 @@ import { useRouter } from 'next/navigation'
 import AppShell from '@/components/AppShell'
 import { useTheme } from '@/components/ThemeProvider'
 import { useAuth } from '@/components/AuthProvider'
+import EditProfileModal from '@/components/modals/EditProfileModal'
+import UpgradeModal from '@/components/modals/UpgradeModal'
 import { repository } from '@/lib/repository'
 import { DEFAULT_SETTINGS, type Settings } from '@/types'
 
@@ -84,7 +86,10 @@ export default function SettingsPage() {
   const [language, setLanguage] = useState<'english' | 'indonesia'>(DEFAULT_SETTINGS.language)
   const [notif, setNotif] = useState({ daily: true, weekly: true, product: false })
   const [priv, setPriv] = useState({ saveLogs: true, analytics: false })
+  const [displayName, setDisplayName] = useState(DEFAULT_SETTINGS.displayName)
   const [loaded, setLoaded] = useState(false)
+  const [editingProfile, setEditingProfile] = useState(false)
+  const [upgrading, setUpgrading] = useState(false)
 
   // Load persisted settings on mount.
   useEffect(() => {
@@ -93,6 +98,7 @@ export default function SettingsPage() {
       setReportStyle(s.reportStyle)
       setOutputLength(s.outputLength)
       setLanguage(s.language)
+      setDisplayName(s.displayName)
       setLoaded(true)
     })
   }, [])
@@ -106,9 +112,10 @@ export default function SettingsPage() {
       reportStyle,
       outputLength,
       language,
+      displayName,
     }
     repository.saveSettings(settings)
-  }, [loaded, themeMode, accent, reportStyle, outputLength, language])
+  }, [loaded, themeMode, accent, reportStyle, outputLength, language, displayName])
 
   useEffect(() => {
     setThemeMode(theme === 'dark' ? 'dark' : 'light')
@@ -138,6 +145,7 @@ export default function SettingsPage() {
       setReportStyle(DEFAULT_SETTINGS.reportStyle)
       setOutputLength(DEFAULT_SETTINGS.outputLength)
       setLanguage(DEFAULT_SETTINGS.language)
+      setDisplayName(DEFAULT_SETTINGS.displayName)
       window.alert('All data deleted.')
     } finally {
       setDeleting(false)
@@ -148,6 +156,14 @@ export default function SettingsPage() {
     await signOut()
     router.replace('/login')
   }
+
+  const handleSaveProfile = (name: string) => {
+    setDisplayName(name) // persisted by the settings useEffect
+  }
+
+  // What to show as the user's name: their chosen display name, else the email
+  // local-part, else a neutral fallback.
+  const profileName = displayName || (user?.email ? user.email.split('@')[0] : 'Guest')
 
   return (
     <AppShell>
@@ -170,22 +186,28 @@ export default function SettingsPage() {
             <Card icon={<User size={15} className="text-[#F4C430]" />} title="Profile">
               <div className="flex items-center gap-4">
                 <div className="relative shrink-0">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-xl font-bold select-none">
-                    M
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-xl font-bold select-none uppercase">
+                    {profileName.charAt(0) || 'G'}
                   </div>
-                  <button className="absolute bottom-0 right-0 w-5 h-5 bg-gray-100 dark:bg-[#2a2a2a] rounded-full flex items-center justify-center border-2 border-white dark:border-[#1a1a1a] hover:bg-gray-200 dark:hover:bg-[#333] transition-colors">
+                  <button
+                    onClick={() => setEditingProfile(true)}
+                    className="absolute bottom-0 right-0 w-5 h-5 bg-gray-100 dark:bg-[#2a2a2a] rounded-full flex items-center justify-center border-2 border-white dark:border-[#1a1a1a] hover:bg-gray-200 dark:hover:bg-[#333] transition-colors"
+                  >
                     <Camera size={9} className="text-gray-500 dark:text-[#aaa]" />
                   </button>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[15px] font-semibold text-gray-900 dark:text-white truncate">
-                    {user?.email ? user.email.split('@')[0] : 'Guest'}
+                    {profileName}
                   </p>
                   <p className="text-[13px] text-gray-400 dark:text-[#666] truncate">
                     {user?.email ?? 'Using local storage (no account)'}
                   </p>
                 </div>
-                <button className="px-4 py-2 rounded-xl border border-gray-200 dark:border-[#333] text-[13px] font-medium text-gray-700 dark:text-[#ccc] hover:border-gray-300 dark:hover:border-[#444] hover:bg-gray-50 dark:hover:bg-white/5 transition-all shrink-0">
+                <button
+                  onClick={() => setEditingProfile(true)}
+                  className="px-4 py-2 rounded-xl border border-gray-200 dark:border-[#333] text-[13px] font-medium text-gray-700 dark:text-[#ccc] hover:border-gray-300 dark:hover:border-[#444] hover:bg-gray-50 dark:hover:bg-white/5 transition-all shrink-0"
+                >
                   Edit Profile
                 </button>
               </div>
@@ -344,7 +366,10 @@ export default function SettingsPage() {
                   <p className="text-[12px] text-gray-400 dark:text-[#555] mt-0.5">Basic features with daily limits</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <button className="flex items-center gap-2 bg-[#F4C430] hover:bg-[#e0b420] text-black text-[13px] font-semibold px-4 py-2.5 rounded-xl transition-colors mb-2">
+                  <button
+                    onClick={() => setUpgrading(true)}
+                    className="flex items-center gap-2 bg-[#F4C430] hover:bg-[#e0b420] text-black text-[13px] font-semibold px-4 py-2.5 rounded-xl transition-colors mb-2"
+                  >
                     <Crown size={13} />
                     Upgrade to Pro
                   </button>
@@ -376,6 +401,16 @@ export default function SettingsPage() {
 
         </div>
       </main>
+
+      {editingProfile && (
+        <EditProfileModal
+          initialName={displayName}
+          email={user?.email ?? null}
+          onClose={() => setEditingProfile(false)}
+          onSave={handleSaveProfile}
+        />
+      )}
+      {upgrading && <UpgradeModal onClose={() => setUpgrading(false)} />}
     </AppShell>
   )
 }
